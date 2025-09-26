@@ -1,7 +1,20 @@
+using Microsoft.EntityFrameworkCore;
 using minimal_api.Domain.DTOs;
+using minimal_api.Infrastructure.Db;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<DbContexto>(options =>
+{
+        options.UseMySql(
+                builder.Configuration.GetConnectionString("MySql"),
+                ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySql"))
+        );
+});
+
 var app = builder.Build();
+
+
 
 app.MapGet("/", () =>"Hello World!");
 
