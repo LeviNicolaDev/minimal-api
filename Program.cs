@@ -3,12 +3,16 @@ using Microsoft.EntityFrameworkCore;
 using minimal_api.Domain.DTOs;
 using minimal_api.Domain.Entities;
 using minimal_api.Domain.Interfaces;
+using minimal_api.Domain.ModelViews;
 using minimal_api.Domain.Services;
 using minimal_api.Infrastructure.Db;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddScoped<IAdministratorService, AdministratorService>();
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<DbContexto>(options =>
 {
@@ -20,9 +24,7 @@ builder.Services.AddDbContext<DbContexto>(options =>
 
 var app = builder.Build();
 
-
-
-app.MapGet("/", () =>"Hello World!");
+app.MapGet("/", () => Results.Json(new Home()));
 
 app.MapPost("/login", ([FromBody] LoginDTO loginDTO, IAdministratorService administratorService) =>
 {
@@ -32,5 +34,8 @@ app.MapPost("/login", ([FromBody] LoginDTO loginDTO, IAdministratorService admin
         } 
         return Results.Unauthorized();
 });
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.Run();
