@@ -1,4 +1,4 @@
-# Minimal API - Gerenciamento de Veículos e Administradores
+# Minimal API - Gerenciamento de Veículos e Administradores (em desenvolvimento 👷🏻)
 
 Este projeto foi desenvolvido em **.NET 9** utilizando a arquitetura **Minimal API** e se destina ao gerenciamento de veículos e administradores. Ele utiliza o **Entity Framework Core** para persistência de dados em um banco de dados **MySQL** e implementa um sistema robusto de autenticação e autorização via **JWT**, com controle de acesso baseado em roles (Administrador e Editor).
 
