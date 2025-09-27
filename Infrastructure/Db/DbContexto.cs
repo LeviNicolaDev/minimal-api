@@ -12,9 +12,21 @@ public class DbContexto : Microsoft.EntityFrameworkCore.DbContext
         _configurationAppSettings = configurationAppSettings;
     }
     
-    
     public DbSet<Administrator> Administrators { get; set; } = default!;
-    
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Administrator>().HasData(
+            new Administrator
+                {
+                    Id = 1,
+                    Email = "administrador@teste.com",
+                    Senha = "123456", // TODO: criptografar a senha
+                    Perfil = "Adm"
+                }
+            );
+    }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
