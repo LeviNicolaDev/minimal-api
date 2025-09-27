@@ -46,21 +46,32 @@ app.MapPost("/administradores/login", ([FromBody] LoginDTO loginDto, IAdministra
 #region Veiculos
 app.MapPost("/veiculos", ([FromBody] VehicleDTO vehicleDto, IVehicleService vehicleService) =>
 {
-        var vehicle = new Vehicle
+        var veiculo = new Vehicle
         {
                 Nome = vehicleDto.Nome,
                 Marca = vehicleDto.Marca,
                 Ano = vehicleDto.Ano
         };
-        vehicleService.Include(vehicle);
-        return Results.Created($"/veiculo/{vehicle.Id}", vehicle);
+        vehicleService.Include(veiculo);
+        return Results.Created($"/veiculo/{veiculo.Id}", veiculo);
 }).WithTags("Veiculos");
 
 app.MapGet("/veiculos", ([FromQuery] int? page, IVehicleService vehicleService) =>
 {
-        var vehicles = vehicleService.All(page);
+        var veiculos = vehicleService.All(page);
 
-        return Results.Ok(vehicles);
+        return Results.Ok(veiculos);
+}).WithTags("Veiculos");
+
+app.MapGet("/veiculos/{id}", ([FromRoute] int id, IVehicleService vehicleService) =>
+{
+        var veiculo = vehicleService.SearchById(id);
+
+        if (veiculo == null)
+        {
+                return Results.NotFound();
+        }
+        return Results.Ok(veiculo);
 }).WithTags("Veiculos");
 #endregion
 
