@@ -13,6 +13,7 @@ public class DbContexto : Microsoft.EntityFrameworkCore.DbContext
     }
     
     public DbSet<Administrator> Administrators { get; set; } = default!;
+    public DbSet<Vehicle> Vehicles { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
