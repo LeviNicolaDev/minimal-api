@@ -44,8 +44,35 @@ app.MapPost("/administradores/login", ([FromBody] LoginDTO loginDto, IAdministra
 #endregion
 
 #region Veiculos
+
+ValidationErrors ValidaDto(VehicleDTO vehicleDto)
+{
+        var validacao = new ValidationErrors{ Mensagens = new List<string>() }; // TODO: Utilizar FluentValidation para regras de validação
+
+        if (string.IsNullOrEmpty(vehicleDto.Nome))
+        {
+                validacao.Mensagens.Add("O nome não pode ser vazio");
+        } 
+        if (string.IsNullOrEmpty(vehicleDto.Marca))
+        {
+                validacao.Mensagens.Add("A marca não pode estar em branco");
+        }        
+        if (vehicleDto.Ano < 1950)
+        {
+                validacao.Mensagens.Add("Veiculo muito antigo, somente veiculos de anos superiores a 1950");
+        }
+
+        return validacao;
+}
+
 app.MapPost("/veiculos", ([FromBody] VehicleDTO vehicleDto, IVehicleService vehicleService) =>
 {
+        var validacao = ValidaDto(vehicleDto);
+        if (validacao.Mensagens.Count > 0)
+        {
+                return Results.BadRequest(validacao);
+        }
+        
         var veiculo = new Vehicle
         {
                 Nome = vehicleDto.Nome,
@@ -77,10 +104,15 @@ app.MapGet("/veiculos/{id}", ([FromRoute] int id, IVehicleService vehicleService
 app.MapPut("/veiculos/{id}", ([FromRoute] int id, VehicleDTO vehicleDto, IVehicleService vehicleService) =>
 {
         var veiculo = vehicleService.SearchById(id);
-
         if (veiculo == null)
         {
                 return Results.NotFound();
+        }
+        
+        var validacao = ValidaDto(vehicleDto);
+        if (validacao.Mensagens.Count > 0)
+        {
+                return Results.BadRequest(validacao);
         }
 
         veiculo.Nome = vehicleDto.Nome;
