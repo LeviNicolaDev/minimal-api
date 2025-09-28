@@ -1,24 +1,22 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace minimal_api.Domain.Entities;
 
-public class Administrator
+public class Vehicle
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; } = default!;
     
     [Required]
-    [StringLength(255)]
-    public string Email { get; set; } = default!;
+    [StringLength(150)]
+    public string Nome { get; set; } = default!;
     
     [Required]
-    [StringLength(50)]
-    public string Senha { get; set; } = default!;
+    [StringLength(100)]
+    public string Marca { get; set; } = default!;
     
     [Required]
-    [StringLength(10)]
-    public string Perfil { get; set; } = default!;
+    public int Ano { get; set; } = default!;
 }
