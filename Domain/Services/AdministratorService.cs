@@ -19,4 +19,30 @@ public class AdministratorService : IAdministratorService
         var adm = _contexto.Administrators.Where(a => a.Email == loginDto.Email && a.Senha == loginDto.Senha).FirstOrDefault();
         return adm;
     }
+
+    public override Administrator Include(Administrator administrator)
+    {
+        _contexto.Administrators.Add(administrator);
+        _contexto.SaveChanges();
+
+        return administrator;
+    }
+
+    public override List<Administrator> All(int? pagina)
+    {
+        var query = _contexto.Administrators.AsQueryable();
+
+        int itensPorPagina = 10;
+
+        if (pagina != null)
+        {
+            query = query.Skip(((int)pagina - 1) * itensPorPagina).Take(itensPorPagina);
+        }
+        return query.ToList();
+    }
+    
+    public override Administrator? SearchById(int id)
+    {
+        return _contexto.Administrators.Where(v => v.Id == id).FirstOrDefault();
+    }
 }
