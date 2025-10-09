@@ -1,0 +1,8 @@
+﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=a5c3d065_002Ddebd_002D412c_002Da012_002D9d53833facfe/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="SaveAdmTest" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;TestAncestor&gt;&#xD;
+    &lt;TestId&gt;MSTest::1EABBC71-D7EA-44A3-964B-1BE0EC47ED0D::net9.0::Test.Domain.Services.AdministratorServiceTest.AdmSearchByIdTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::1EABBC71-D7EA-44A3-964B-1BE0EC47ED0D::net9.0::Test.Domain.Services.AdministratorServiceTest.SaveAdmTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::1EABBC71-D7EA-44A3-964B-1BE0EC47ED0D::net9.0::Test.Requests.AdministratorRequestTest.GetSetPropsTest&lt;/TestId&gt;&#xD;
+  &lt;/TestAncestor&gt;&#xD;
+&lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
