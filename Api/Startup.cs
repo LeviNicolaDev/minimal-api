@@ -19,16 +19,20 @@ namespace minimal_api;
 
 public class Startup
 {
+    public IConfiguration Configuration { get; set; } = default!;
+    
     public Startup(IConfiguration configuration)
     {
         Configuration = configuration;
-        key = Configuration.GetSection("Jwt").ToString() ?? "";
     }
-
-    private string key;
-    public IConfiguration Configuration { get; set; } = default!;
     
     public void ConfigureServices(IServiceCollection services) {
+        var jwtKey = Configuration["Jwt:Key"]; 
+        if (string.IsNullOrEmpty(jwtKey))
+        {
+                throw new InvalidOperationException("O segredo 'Jwt:Key' não foi encontrado nas configurações (Azure App Service ou appsettings).");
+        }
+
         services.AddAuthentication(option =>
         {
             option.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -38,7 +42,7 @@ public class Startup
             option.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateLifetime = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
                 ValidateIssuer = false,
                 ValidateAudience = false
             };
@@ -77,12 +81,17 @@ public class Startup
             });
         });
 
+        var azureConnectionString = Configuration.GetConnectionString("AzureConnection");
+        
+        if (string.IsNullOrEmpty(azureConnectionString))
+        { 
+                throw new InvalidOperationException("A Connection String 'AzureConnection' não foi configurada.");
+        }
+
+        
         services.AddDbContext<DbContexto>(options =>
         {
-            options.UseMySql(
-                Configuration.GetConnectionString("MySql"),
-                ServerVersion.AutoDetect(Configuration.GetConnectionString("MySql"))
-            );
+            options.UseSqlServer(azureConnectionString);
         });
     }
 
@@ -92,6 +101,21 @@ public class Startup
         app.UseSwaggerUI();
 
         app.UseRouting();
+        
+        using (var scope = app.ApplicationServices.CreateScope())
+        {
+                var services = scope.ServiceProvider;
+                try
+                {
+                        var context = services.GetRequiredService<DbContexto>();
+                        context.Database.Migrate();
+                }
+                catch (Exception ex)
+                {
+                        var logger = services.GetRequiredService<ILogger<Startup>>();
+                        logger.LogError(ex, "Ocorreu um erro durante a migração do banco de dados.");
+                }
+        }
         
         app.UseAuthentication();
         app.UseAuthorization();
@@ -112,11 +136,14 @@ public class Startup
                 #region Administradores
                 string GenerateTokenJwt(Administrator administrator)
                 {
-                        if (string.IsNullOrEmpty(key))
+                        var tokenKey = Configuration["Jwt:Key"]; // Lê a chave do Configuration
+
+                        if (string.IsNullOrEmpty(tokenKey))
                         {
-                                return String.Empty;
+                                return String.Empty; // Ou lance uma exceção apropriada
                         }
-                        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+                
+                        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey));
                         var credentials = new SigningCredentials(securityKey, 
                                 SecurityAlgorithms.HmacSha256);
 
