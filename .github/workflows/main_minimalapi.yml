@@ -1,4 +1,4 @@
-name: Build and deploy ASP.Net Core app to Azure Web App - minimalapi
+name: Build, validate and deploy ASP.Net Core app to Azure Web App - minimalapi
 
 on:
   push:
@@ -20,17 +20,31 @@ jobs:
         with:
           dotnet-version: '9.x'
 
+      - name: Show directory tree before build
+        run: |
+          echo "📁 Conteúdo inicial do repositório:"
+          ls -R
+
       - name: Build with dotnet
-        run: dotnet build ./Api/minimal-api.csproj --configuration Release
+        run: |
+          echo "🏗️ Iniciando build do projeto..."
+          dotnet build ./Api/minimal-api.csproj --configuration Release
 
       - name: Publish with dotnet
-        run: dotnet publish ./Api/minimal-api.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
+        run: |
+          echo "📦 Publicando projeto..."
+          dotnet publish ./Api/minimal-api.csproj -c Release -o ./myapp
+
+      - name: Verify published files
+        run: |
+          echo "📂 Arquivos gerados na pasta ./myapp:"
+          ls -R ./myapp || echo "❌ Nenhum arquivo encontrado em ./myapp"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+          path: ./myapp
 
   deploy:
     runs-on: ubuntu-latest
@@ -44,7 +58,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-      
+
+      - name: Verify artifact content
+        run: |
+          echo "📦 Verificando conteúdo baixado do artefato:"
+          ls -R || echo "❌ Nenhum arquivo encontrado no artefato baixado."
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -52,10 +71,15 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_09231F8657B045A4BA2FB1ADEC1D6242 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_7D605DEDA28D441DAAF3D49D0D1B98D2 }}
 
+      - name: List files before deploy
+        run: |
+          echo "🧾 Listando arquivos antes do deploy..."
+          ls -R
+
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'minimalapi'
           slot-name: 'Production'
-          package: ${{env.DOTNET_ROOT}}/myapp
+          package: .
