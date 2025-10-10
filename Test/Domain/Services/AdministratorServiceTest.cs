@@ -1,9 +1,7 @@
-﻿using System.Reflection;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.EntityFrameworkCore;
 using minimal_api.Domain.Entities;
 using minimal_api.Domain.Services;
 using minimal_api.Infrastructure.Db;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Test.Domain.Services;
 
@@ -11,21 +9,16 @@ namespace Test.Domain.Services;
 public sealed class AdministratorServiceTest
 {
     private DbContexto? _context;
-    private IDbContextTransaction? _transaction;
-    
     private DbContexto CreateContextTest()
     {
-        var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        var path = Path.GetFullPath(Path.Combine(assemblyPath ?? "", "..", "..", ".."));
+        // 1. Cria opções do DbContext usando o provedor In-Memory
+        // O nome do banco de dados (ex: Guid.NewGuid().ToString()) garante isolamento
+        var options = new DbContextOptionsBuilder<DbContexto>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
 
-        var builder = new ConfigurationBuilder()
-            .SetBasePath(path ?? Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .AddEnvironmentVariables();
-
-        var configuration = builder.Build();
-
-        return new DbContexto(configuration);
+        // 2. Passa as opções para o construtor do DbContexto
+        return new DbContexto(options);
     }
 
     [TestInitialize]
@@ -33,19 +26,14 @@ public sealed class AdministratorServiceTest
     {
         // 1. Cria o contexto de teste
         _context = CreateContextTest();
-        // 2. Inicia uma transação antes de cada teste.
-        // Isso garante que todas as operações de banco de dados neste teste possam ser revertidas.
-        _transaction = _context.Database.BeginTransaction();
+        // 2. Não há necessidade de iniciar transação, pois o In-Memory já é isolado por teste
     }
 
     [TestCleanup]
     public void TestCleanup()
     {
-        // No final de cada teste, faz o rollback da transação.
-        // Isso garante que os dados inseridos (o Adm) sejam removidos do banco,
-        // limpando o estado para o próximo teste, mesmo em paralelismo.
-        _transaction?.Rollback();
-        _transaction?.Dispose();
+        // Limpa o banco de dados em memória após cada teste
+        _context?.Database.EnsureDeleted();
         _context?.Dispose();
     }
     
