@@ -63,5 +63,3 @@ jobs:
           app-name: 'minimalapi'
           slot-name: 'Production'
           package: .
-
-          
