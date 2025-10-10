@@ -122,6 +122,13 @@ public class Startup
 
         app.UseEndpoints(endpoints =>
         {
+                endpoints.MapGet("/", context =>
+                {
+                        context.Response.Redirect("/swagger/index.html");
+                        return Task.CompletedTask;
+                });
+
+                
                 #region Home
                 endpoints.MapGet("/", () => Results.Json(new Home()))
                         .AllowAnonymous()
