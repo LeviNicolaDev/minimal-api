@@ -58,5 +58,6 @@ jobs:
         with:
           app-name: 'minimalapi'
           slot-name: 'Production'
-          package: .net-app
+          package: .
+
 
