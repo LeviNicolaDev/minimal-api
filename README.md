@@ -23,6 +23,7 @@ Este projeto foi desenvolvido em **.NET 9** utilizando a arquitetura **Minimal A
 
 - **Autenticação e Autorização:** Implementada via JWT para garantir acesso seguro às rotas.
 - **Controle de Acesso (Roles):** As rotas são protegidas, permitindo o acesso apenas a usuários com as roles **Adm** ou **Editor**, conforme a permissão necessária para cada funcionalidade.
+- **Segredos na Nuvem:** A Connection String e a JWT Key são lidas com segurança através das variáveis de ambiente do Azure App Service, e não são expostas no código.
 
 ## 🚀 Tecnologias Utilizadas
 
@@ -32,43 +33,12 @@ Este projeto foi desenvolvido em **.NET 9** utilizando a arquitetura **Minimal A
 - **Banco de Dados:** MySQL
 - **Autenticação:** JWT
 - **Documentação:** Swagger
+- **Banco de Dados:** Azure SQL Database
+- **Hospedagem:** Azure App Service
+- **CI/CD:** GitHub Actions
 
-## 🛠️ Instruções de Uso
+## 📄 Acessar a Documentação
 
-### 1. Requisitos Prévios
+Para explorar todos os endpoints da API, acesse o link abaixo:
 
-- **[.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)**
-- **[MySQL Server](https://www.mysql.com/downloads/)**
-- **[MySQL Workbench](https://www.mysql.com/products/workbench/)** (opcional)
-
-
-### 2. Configuração do Banco de Dados
-
-1. Crie um banco de dados chamado `minimal_api` no seu servidor MySQL.
-2. No arquivo `appsettings.json` do projeto, insira a sua string de conexão:
-   ```json
-   "ConnectionStrings": {
-     "MySql": "Server=localhost;Database=minimal_api;Uid=root;Pwd=sua_senha;"
-   }
-   ```
-
-   
-### 3. Execução das Migrações
-
-Abra o terminal na pasta do projeto e execute:
-
-```bash
-dotnet ef database update
-```
-
-
-### 4. Executando a API
-
-Para iniciar o servidor, use o comando:
-
-```bash
-dotnet run
-```
-A API estará rodando em `https://localhost:[sua porta]`. A documentação Swagger pode ser 
-acessada em `https://localhost:[sua porta]/swagger`.
-
+👉 **[https://minimalapi.azurewebsites.net/swagger](https://minimalapi-abdcc3brghavbsdp.brazilsouth-01.azurewebsites.net/swagger)**
