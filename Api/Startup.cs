@@ -91,7 +91,14 @@ public class Startup
         
         services.AddDbContext<DbContexto>(options =>
         {
-            options.UseSqlServer(azureConnectionString);
+                options.UseSqlServer(azureConnectionString,
+                        sqlServerOptionsAction: sqlOptions =>
+                        {
+                                sqlOptions.EnableRetryOnFailure(
+                                        maxRetryCount: 5,        
+                                        maxRetryDelay: TimeSpan.FromSeconds(30), 
+                                        errorNumbersToAdd: null); 
+                        });
         });
     }
 
