@@ -13,7 +13,9 @@ using minimal_api.Domain.Enuns;
 using minimal_api.Domain.Interfaces;
 using minimal_api.Domain.ModelViews;
 using minimal_api.Domain.Services;
+using minimal_api.Domain.Validators;
 using minimal_api.Infrastructure.Db;
+using FluentValidation;
 
 namespace minimal_api;
 
@@ -80,6 +82,8 @@ public class Startup
                 }
             });
         });
+
+        services.AddValidatorsFromAssemblyContaining<VehicleDtoValidator>();
 
         var azureConnectionString = Configuration.GetConnectionString("AzureConnection");
         
