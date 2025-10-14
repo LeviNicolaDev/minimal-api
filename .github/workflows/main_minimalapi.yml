@@ -3,7 +3,7 @@ name: Build, validate and deploy ASP.Net Core app to Azure Web App - minimalapi
 on:
   push:
     branches:
-      - main
+      - prod
   workflow_dispatch:
 
 jobs:
@@ -83,3 +83,4 @@ jobs:
           app-name: 'minimalapi'
           slot-name: 'Production'
           package: .
+
