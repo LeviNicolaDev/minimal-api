@@ -13,7 +13,9 @@ using minimal_api.Domain.Enuns;
 using minimal_api.Domain.Interfaces;
 using minimal_api.Domain.ModelViews;
 using minimal_api.Domain.Services;
+using minimal_api.Domain.Validators;
 using minimal_api.Infrastructure.Db;
+using FluentValidation;
 
 namespace minimal_api;
 
@@ -81,6 +83,8 @@ public class Startup
             });
         });
 
+        services.AddValidatorsFromAssemblyContaining<VehicleDtoValidator>();
+
         var azureConnectionString = Configuration.GetConnectionString("AzureConnection");
         
         if (string.IsNullOrEmpty(azureConnectionString))
@@ -116,6 +120,28 @@ public class Startup
                 {
                         var context = services.GetRequiredService<DbContexto>();
                         context.Database.Migrate();
+                        
+                        if (!context.Administrators.Any(a => a.Email == "administrador@teste.com"))
+                        {
+                                var adminPassword = Configuration.GetValue<string>("AppSettings:AdminDefaultPassword");
+                
+                                if (string.IsNullOrEmpty(adminPassword))
+                                {
+                                        throw new Exception("Senha do administrador padrão não configurada em 'AppSettings:AdminDefaultPassword'!");
+                                }
+
+                                var adminUser = new Administrator
+                                {
+                                        Email = "administrador@teste.com",
+                                        Perfil = "Adm"
+                                };
+
+                                var passwordHasher = new Microsoft.AspNetCore.Identity.PasswordHasher<Administrator>();
+                                adminUser.Senha = passwordHasher.HashPassword(adminUser, adminPassword);
+                                
+                                context.Administrators.Add(adminUser);
+                                context.SaveChanges();
+                        }
                 }
                 catch (Exception ex)
                 {
@@ -150,11 +176,11 @@ public class Startup
                 #region Administradores
                 string GenerateTokenJwt(Administrator administrator)
                 {
-                        var tokenKey = Configuration["Jwt:Key"]; // Lê a chave do Configuration
+                        var tokenKey = Configuration["Jwt:Key"];
 
                         if (string.IsNullOrEmpty(tokenKey))
                         {
-                                return String.Empty; // Ou lance uma exceção apropriada
+                                return String.Empty;
                         }
                 
                         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey));
@@ -232,11 +258,14 @@ public class Startup
                         var administrator = new Administrator
                         {
                                 Email = administratorDTO.Email,
-                                Senha = administratorDTO.Senha,
                                 Perfil = administratorDTO.Perfil.ToString() ?? Perfil.Editor.ToString()
                         }; 
+                        
+                        var passwordHasher = new Microsoft.AspNetCore.Identity.PasswordHasher<Administrator>();
+                        administrator.Senha = passwordHasher.HashPassword(administrator, administratorDTO.Senha);
 
                         administratorService.Include(administrator);
+                        
                         return Results.Created($"/veiculo/{administrator.Id}", new AdministratorModelView
                         {
                                 Id = administrator.Id,
@@ -330,7 +359,7 @@ public class Startup
                         return Results.Created($"/veiculo/{veiculo.Id}", veiculo);
                 })
                         .RequireAuthorization()
-                        .RequireAuthorization(new AuthorizeAttribute{ Roles = "Adm,Edior" })
+                        .RequireAuthorization(new AuthorizeAttribute{ Roles = "Adm,Editor" })
                         .WithTags("Veiculos");
 
                 endpoints.MapGet("/veiculos", ([FromQuery] int? page, IVehicleService vehicleService) =>

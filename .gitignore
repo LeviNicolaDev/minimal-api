@@ -162,4 +162,7 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# Arquivos de configuração específicos de ambiente que não devem ir para o repositório
+**/appsettings.Development.json
+
 # End of https://www.toptal.com/developers/gitignore/api/windows,macos,linux,dotnetcore,rider
