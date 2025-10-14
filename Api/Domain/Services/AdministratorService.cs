@@ -16,8 +16,21 @@ public class AdministratorService : IAdministratorService
     }
     public override Administrator? Login(LoginDTO loginDto)
     {
-        var adm = _contexto.Administrators.Where(a => a.Email == loginDto.Email && a.Senha == loginDto.Senha).FirstOrDefault();
-        return adm;
+        var adm = _contexto.Administrators.FirstOrDefault(a => a.Email == loginDto.Email);
+        if (adm == null)
+        {
+            return null;
+        }
+
+        var passwordHasher = new Microsoft.AspNetCore.Identity.PasswordHasher<Administrator>();
+        var verificationResult = passwordHasher.VerifyHashedPassword(adm, adm.Senha, loginDto.Senha);
+        
+        if (verificationResult == Microsoft.AspNetCore.Identity.PasswordVerificationResult.Success)
+        {
+            return adm;
+        }
+        
+        return null;
     }
 
     public override Administrator Include(Administrator administrator)
