@@ -11,7 +11,7 @@ using minimal_api.Infrastructure.Db;
 namespace minimal_api.Migrations
 {
     [DbContext(typeof(DbContexto))]
-    [Migration("20251015142156_UpdateAdminPasswordLength")]
+    [Migration("20251015150931_UpdateAdminPasswordLength")]
     partial class UpdateAdminPasswordLength
     {
         /// <inheritdoc />
