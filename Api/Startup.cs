@@ -160,18 +160,7 @@ public class Startup
                         context.Response.Redirect("/swagger/index.html");
                         return Task.CompletedTask;
                 });
-
                 
-                #region Home
-                endpoints.MapGet("/", () => Results.Json(new Home()))
-                        .AllowAnonymous()
-                        .WithTags("Home")
-                        .WithOpenApi(operation =>
-                        {
-                                operation.Security = new List<OpenApiSecurityRequirement>(); 
-                                return operation;
-                        });
-                #endregion
 
                 #region Administradores
                 string GenerateTokenJwt(Administrator administrator)
@@ -229,30 +218,14 @@ public class Startup
 
                 endpoints.MapPost("/administradores", (
                                 [FromBody] AdministratorDTO administratorDTO, 
-                                IAdministratorService administratorService
+                                IAdministratorService administratorService,
+                                IValidator<AdministratorDTO> validator
                                 ) =>
                 {
-                        var validacao = new ValidationErrors
+                        var validationResult = validator.Validate(administratorDTO);
+                        if (!validationResult.IsValid)
                         {
-                                Mensagens = new List<string>()
-                        };
-
-                        if (string.IsNullOrEmpty(administratorDTO.Email))
-                        {
-                                validacao.Mensagens.Add("Email não pode ser vazio");
-                        }        
-                        if (string.IsNullOrEmpty(administratorDTO.Senha))
-                        {
-                                validacao.Mensagens.Add("Senha não pode ser vazia");
-                        }        
-                        if (administratorDTO.Perfil == null)
-                        {
-                                validacao.Mensagens.Add("Perfil não pode ser vazio");
-                        }
-                        
-                        if (validacao.Mensagens.Count > 0)
-                        {
-                                return Results.BadRequest(validacao);
+                                return Results.ValidationProblem(validationResult.ToDictionary());
                         }
                         
                         var administrator = new Administrator
@@ -321,32 +294,16 @@ public class Startup
                 #endregion
 
                 #region Veiculos
-                ValidationErrors ValidaDto(VehicleDTO vehicleDto)
+                endpoints.MapPost("/veiculos", (
+                                [FromBody] VehicleDTO vehicleDto, 
+                                IVehicleService vehicleService, 
+                                IValidator<VehicleDTO> validator) =>
                 {
-                        var validacao = new ValidationErrors{ Mensagens = new List<string>() }; // TODO: Utilizar FluentValidation para regras de validação
-
-                        if (string.IsNullOrEmpty(vehicleDto.Nome))
+                        var validationResult = validator.Validate(vehicleDto);
+                        
+                        if (!validationResult.IsValid)
                         {
-                                validacao.Mensagens.Add("O nome não pode ser vazio");
-                        } 
-                        if (string.IsNullOrEmpty(vehicleDto.Marca))
-                        {
-                                validacao.Mensagens.Add("A marca não pode estar em branco");
-                        }        
-                        if (vehicleDto.Ano < 1950)
-                        {
-                                validacao.Mensagens.Add("Veiculo muito antigo, somente veiculos de anos superiores a 1950");
-                        }
-
-                        return validacao;
-                }
-
-                endpoints.MapPost("/veiculos", ([FromBody] VehicleDTO vehicleDto, IVehicleService vehicleService) =>
-                {
-                        var validacao = ValidaDto(vehicleDto);
-                        if (validacao.Mensagens != null && validacao.Mensagens.Count > 0)
-                        {
-                                return Results.BadRequest(validacao);
+                                return Results.ValidationProblem(validationResult.ToDictionary());
                         }
                         
                         var veiculo = new Vehicle
@@ -385,7 +342,11 @@ public class Startup
                         .RequireAuthorization(new AuthorizeAttribute{ Roles = "Adm,Editor" })
                         .WithTags("Veiculos");
 
-                endpoints.MapPut("/veiculos/{id}", ([FromRoute] int id, VehicleDTO vehicleDto, IVehicleService vehicleService) =>
+                endpoints.MapPut("/veiculos/{id}", (
+                                [FromRoute] int id, 
+                                VehicleDTO vehicleDto, 
+                                IVehicleService vehicleService,
+                                IValidator<VehicleDTO> validator) =>
                 {
                         var veiculo = vehicleService.SearchById(id);
                         if (veiculo == null)
@@ -393,10 +354,11 @@ public class Startup
                                 return Results.NotFound();
                         }
                         
-                        var validacao = ValidaDto(vehicleDto);
-                        if (validacao.Mensagens != null && validacao.Mensagens.Count > 0)
+                        var validationResult = validator.Validate(vehicleDto);
+
+                        if (!validationResult.IsValid)
                         {
-                                return Results.BadRequest(validacao);
+                                return Results.ValidationProblem(validationResult.ToDictionary());
                         }
 
                         veiculo.Nome = vehicleDto.Nome;
