@@ -15,6 +15,9 @@ public class DbContexto : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<Administrator>()
+            .Property(a => a.Senha)
+            .HasMaxLength(255);
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
