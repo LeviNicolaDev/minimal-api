@@ -1,4 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -13,7 +13,9 @@ using minimal_api.Domain.Enuns;
 using minimal_api.Domain.Interfaces;
 using minimal_api.Domain.ModelViews;
 using minimal_api.Domain.Services;
+using minimal_api.Domain.Validators;
 using minimal_api.Infrastructure.Db;
+using FluentValidation;
 
 namespace minimal_api;
 
@@ -81,6 +83,8 @@ public class Startup
             });
         });
 
+        services.AddValidatorsFromAssemblyContaining<VehicleDtoValidator>();
+
         var azureConnectionString = Configuration.GetConnectionString("AzureConnection");
         
         if (string.IsNullOrEmpty(azureConnectionString))
@@ -116,6 +120,28 @@ public class Startup
                 {
                         var context = services.GetRequiredService<DbContexto>();
                         context.Database.Migrate();
+                        
+                        if (!context.Administrators.Any(a => a.Email == "administrador@teste.com"))
+                        {
+                                var adminPassword = Configuration.GetValue<string>("AppSettings:AdminDefaultPassword");
+                
+                                if (string.IsNullOrEmpty(adminPassword))
+                                {
+                                        throw new Exception("Senha do administrador padrão não configurada em 'AppSettings:AdminDefaultPassword'!");
+                                }
+
+                                var adminUser = new Administrator
+                                {
+                                        Email = "administrador@teste.com",
+                                        Perfil = "Adm"
+                                };
+
+                                var passwordHasher = new Microsoft.AspNetCore.Identity.PasswordHasher<Administrator>();
+                                adminUser.Senha = passwordHasher.HashPassword(adminUser, adminPassword);
+                                
+                                context.Administrators.Add(adminUser);
+                                context.SaveChanges();
+                        }
                 }
                 catch (Exception ex)
                 {
@@ -134,27 +160,16 @@ public class Startup
                         context.Response.Redirect("/swagger/index.html");
                         return Task.CompletedTask;
                 });
-
                 
-                #region Home
-                endpoints.MapGet("/", () => Results.Json(new Home()))
-                        .AllowAnonymous()
-                        .WithTags("Home")
-                        .WithOpenApi(operation =>
-                        {
-                                operation.Security = new List<OpenApiSecurityRequirement>(); 
-                                return operation;
-                        });
-                #endregion
 
                 #region Administradores
                 string GenerateTokenJwt(Administrator administrator)
                 {
-                        var tokenKey = Configuration["Jwt:Key"]; // Lê a chave do Configuration
+                        var tokenKey = Configuration["Jwt:Key"];
 
                         if (string.IsNullOrEmpty(tokenKey))
                         {
-                                return String.Empty; // Ou lance uma exceção apropriada
+                                return String.Empty;
                         }
                 
                         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey));
@@ -203,40 +218,27 @@ public class Startup
 
                 endpoints.MapPost("/administradores", (
                                 [FromBody] AdministratorDTO administratorDTO, 
-                                IAdministratorService administratorService
+                                IAdministratorService administratorService,
+                                IValidator<AdministratorDTO> validator
                                 ) =>
                 {
-                        var validacao = new ValidationErrors
+                        var validationResult = validator.Validate(administratorDTO);
+                        if (!validationResult.IsValid)
                         {
-                                Mensagens = new List<string>()
-                        };
-
-                        if (string.IsNullOrEmpty(administratorDTO.Email))
-                        {
-                                validacao.Mensagens.Add("Email não pode ser vazio");
-                        }        
-                        if (string.IsNullOrEmpty(administratorDTO.Senha))
-                        {
-                                validacao.Mensagens.Add("Senha não pode ser vazia");
-                        }        
-                        if (administratorDTO.Perfil == null)
-                        {
-                                validacao.Mensagens.Add("Perfil não pode ser vazio");
-                        }
-                        
-                        if (validacao.Mensagens.Count > 0)
-                        {
-                                return Results.BadRequest(validacao);
+                                return Results.ValidationProblem(validationResult.ToDictionary());
                         }
                         
                         var administrator = new Administrator
                         {
                                 Email = administratorDTO.Email,
-                                Senha = administratorDTO.Senha,
                                 Perfil = administratorDTO.Perfil.ToString() ?? Perfil.Editor.ToString()
                         }; 
+                        
+                        var passwordHasher = new Microsoft.AspNetCore.Identity.PasswordHasher<Administrator>();
+                        administrator.Senha = passwordHasher.HashPassword(administrator, administratorDTO.Senha);
 
                         administratorService.Include(administrator);
+                        
                         return Results.Created($"/veiculo/{administrator.Id}", new AdministratorModelView
                         {
                                 Id = administrator.Id,
@@ -292,32 +294,16 @@ public class Startup
                 #endregion
 
                 #region Veiculos
-                ValidationErrors ValidaDto(VehicleDTO vehicleDto)
+                endpoints.MapPost("/veiculos", (
+                                [FromBody] VehicleDTO vehicleDto, 
+                                IVehicleService vehicleService, 
+                                IValidator<VehicleDTO> validator) =>
                 {
-                        var validacao = new ValidationErrors{ Mensagens = new List<string>() }; // TODO: Utilizar FluentValidation para regras de validação
-
-                        if (string.IsNullOrEmpty(vehicleDto.Nome))
+                        var validationResult = validator.Validate(vehicleDto);
+                        
+                        if (!validationResult.IsValid)
                         {
-                                validacao.Mensagens.Add("O nome não pode ser vazio");
-                        } 
-                        if (string.IsNullOrEmpty(vehicleDto.Marca))
-                        {
-                                validacao.Mensagens.Add("A marca não pode estar em branco");
-                        }        
-                        if (vehicleDto.Ano < 1950)
-                        {
-                                validacao.Mensagens.Add("Veiculo muito antigo, somente veiculos de anos superiores a 1950");
-                        }
-
-                        return validacao;
-                }
-
-                endpoints.MapPost("/veiculos", ([FromBody] VehicleDTO vehicleDto, IVehicleService vehicleService) =>
-                {
-                        var validacao = ValidaDto(vehicleDto);
-                        if (validacao.Mensagens != null && validacao.Mensagens.Count > 0)
-                        {
-                                return Results.BadRequest(validacao);
+                                return Results.ValidationProblem(validationResult.ToDictionary());
                         }
                         
                         var veiculo = new Vehicle
@@ -330,7 +316,7 @@ public class Startup
                         return Results.Created($"/veiculo/{veiculo.Id}", veiculo);
                 })
                         .RequireAuthorization()
-                        .RequireAuthorization(new AuthorizeAttribute{ Roles = "Adm,Edior" })
+                        .RequireAuthorization(new AuthorizeAttribute{ Roles = "Adm,Editor" })
                         .WithTags("Veiculos");
 
                 endpoints.MapGet("/veiculos", ([FromQuery] int? page, IVehicleService vehicleService) =>
@@ -356,7 +342,11 @@ public class Startup
                         .RequireAuthorization(new AuthorizeAttribute{ Roles = "Adm,Editor" })
                         .WithTags("Veiculos");
 
-                endpoints.MapPut("/veiculos/{id}", ([FromRoute] int id, VehicleDTO vehicleDto, IVehicleService vehicleService) =>
+                endpoints.MapPut("/veiculos/{id}", (
+                                [FromRoute] int id, 
+                                VehicleDTO vehicleDto, 
+                                IVehicleService vehicleService,
+                                IValidator<VehicleDTO> validator) =>
                 {
                         var veiculo = vehicleService.SearchById(id);
                         if (veiculo == null)
@@ -364,10 +354,11 @@ public class Startup
                                 return Results.NotFound();
                         }
                         
-                        var validacao = ValidaDto(vehicleDto);
-                        if (validacao.Mensagens != null && validacao.Mensagens.Count > 0)
+                        var validationResult = validator.Validate(vehicleDto);
+
+                        if (!validationResult.IsValid)
                         {
-                                return Results.BadRequest(validacao);
+                                return Results.ValidationProblem(validationResult.ToDictionary());
                         }
 
                         veiculo.Nome = vehicleDto.Nome;
