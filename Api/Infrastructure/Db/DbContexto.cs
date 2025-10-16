@@ -1,10 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using minimal_api.Domain.Entities;
-// REMOVA: using Microsoft.Extensions.Configuration; // Não é mais necessário aqui
 
 namespace minimal_api.Infrastructure.Db;
 
-public class DbContexto : Microsoft.EntityFrameworkCore.DbContext
+public class DbContexto : DbContext
 {
     public DbContexto(DbContextOptions<DbContexto> options) : base(options)
     {
@@ -15,15 +14,10 @@ public class DbContexto : Microsoft.EntityFrameworkCore.DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Administrator>().HasData(
-            new Administrator
-            {
-                Id = 1,
-                Email = "administrador@teste.com",
-                Senha = "123456", // TODO: criptografar a senha
-                Perfil = "Adm"
-            }
-        );
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<Administrator>()
+            .Property(a => a.Senha)
+            .HasMaxLength(255);
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
